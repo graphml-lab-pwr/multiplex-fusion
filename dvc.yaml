@@ -1,0 +1,441 @@
+vars:
+  - SEEDS: "42,1337,1234,4321,1001"
+  - SEED: 42
+  - DATASETS:
+    - "ACM"
+    - "Amazon"
+    - "Freebase"
+    - "IMDB"
+    - "Cora"
+    - "CiteSeer"
+
+stages:
+  # ------------------------
+  # --- Prepare datasets ---
+  # ------------------------
+  convert_to_pyg:
+    foreach: ["ACM", "Amazon", "Freebase", "IMDB"]
+    do:
+      cmd: >-
+        python3 experiments/scripts/convert_to_pyg.py
+        --name ${item}
+        --input_dir data/raw_datasets/
+        --output_dir data/datasets/
+      deps:
+      - experiments/scripts/convert_to_pyg.py
+      - data/raw_datasets/
+      outs:
+      - data/datasets/${item}.pt
+
+  prepare_citation_graph:
+    foreach: [ "Cora", "CiteSeer" ]
+    do:
+      cmd: >-
+        python3 experiments/scripts/prepare_citation_graph.py
+        --name ${item}
+        --output_dir data/datasets/
+      deps:
+      - experiments/scripts/prepare_citation_graph.py
+      outs:
+      - data/datasets/${item}.pt
+
+  # -----------------
+  # --- No fusion ---
+  # -----------------
+  evaluate_node_features:
+    foreach: ${DATASETS}
+    do:
+      cmd: >-
+        python3 experiments/scripts/evaluate_node_features.py
+        --seeds ${SEEDS}
+        --dataset_file data/datasets/${item}.pt
+        --output_dir data/node_features/${item}/
+      deps:
+      - experiments/scripts/evaluate_node_features.py
+      - data/datasets/${item}.pt
+      outs:
+      - data/node_features/${item}/embedding.pt
+      - data/node_features/${item}/metrics/
+
+  evaluate_layerwise_embeddings:
+    foreach: ${DATASETS}
+    do:
+      cmd: >-
+        python3 experiments/scripts/evaluate_layerwise_embeddings.py
+        --seeds ${SEEDS}
+        --dataset_file data/datasets/${item}.pt
+        --input_dir data/dgi/${item}/embeddings/
+        --output_dir data/layerwise/${item}/
+      deps:
+      - experiments/scripts/evaluate_layerwise_embeddings.py
+      - data/datasets/${item}.pt
+      - data/dgi/${item}/embeddings/
+      outs:
+      - data/layerwise/${item}/
+
+  # --------------------------
+  # --- Graph-level fusion ---
+  # --------------------------
+  flattened_graph_methods_hps:
+    matrix:
+      dataset: ${DATASETS}
+      method: [
+        "flattened_deepwalk",
+        "flattened_supervised_gcn",
+        "flattened_supervised_gat",
+        "flattened_dgi",
+      ]
+    cmd: >-
+      python3 experiments/scripts/run_hps.py
+      --seed ${SEED}
+      --dataset_file data/datasets/${item.dataset}.pt
+      --config_file experiments/configs/${item.method}/hps.yaml
+      --log_file data/hps/${item.method}/${item.dataset}.csv
+      --num_epochs 500
+    params:
+    - experiments/configs/${item.method}/hps.yaml:
+      - ${item.dataset}
+    deps:
+    - experiments/scripts/run_hps.py
+    - data/datasets/${item.dataset}.pt
+    outs:
+    - data/hps/${item.method}/${item.dataset}.csv
+
+  flattened_graph_methods_extract_best_hparams:
+    matrix:
+      method: [
+        "flattened_deepwalk",
+        "flattened_supervised_gcn",
+        "flattened_supervised_gat",
+        "flattened_dgi",
+      ]
+    cmd: >-
+      python3 experiments/scripts/extract_best_hparams.py
+      --input_dir data/hps/${item.method}/
+      --select_by_metric macro_f1
+      --hps_config_file experiments/configs/${item.method}/hps.yaml
+      --output_file experiments/configs/${item.method}/embed.yaml
+    deps:
+    - experiments/scripts/extract_best_hparams.py
+    - experiments/configs/${item.method}/hps.yaml
+    - data/hps/${item.method}/
+    outs:
+    - experiments/configs/${item.method}/embed.yaml:
+        cache: false
+
+  flattened_graph_methods_embed:
+    matrix:
+      dataset: ${DATASETS}
+      method: [
+        "flattened_deepwalk",
+        "flattened_supervised_gcn",
+        "flattened_supervised_gat",
+        "flattened_dgi",
+      ]
+    cmd: >-
+      python3 experiments/scripts/embed.py 
+      --seeds ${SEEDS}
+      --dataset_file data/datasets/${item.dataset}.pt
+      --config_file experiments/configs/${item.method}/embed.yaml
+      --output_dir data/${item.method}/${item.dataset}/
+    params:
+    - experiments/configs/${item.method}/embed.yaml:
+      - ${item.dataset}
+    deps:
+    - experiments/scripts/embed.py
+    - data/datasets/${item.dataset}.pt
+    outs:
+    - data/${item.method}/${item.dataset}/
+
+  mhgcn_embed:
+    matrix:
+      dataset: ${DATASETS}
+    cmd: >-
+      python3 experiments/scripts/embed.py 
+      --seeds ${SEEDS}
+      --dataset_file data/datasets/${item.dataset}.pt
+      --config_file experiments/configs/mhgcn/embed.yaml
+      --output_dir data/mhgcn/${item.dataset}/
+    params:
+    - experiments/configs/mhgcn/embed.yaml:
+      - ${item.dataset}
+    deps:
+    - experiments/scripts/embed.py
+    - data/datasets/${item.dataset}.pt
+    outs:
+    - data/mhgcn/${item.dataset}/
+
+  # ------------------------
+  # --- GNN-level fusion ---
+  # ------------------------
+  multiplex_hps:
+    matrix:
+      dataset: ${DATASETS}
+      method: [
+        "dmgi",
+        "hdgi",
+        "s2mgrl",
+      ]
+    cmd: >-
+      python3 experiments/scripts/run_hps.py
+      --seed ${SEED}
+      --dataset_file data/datasets/${item.dataset}.pt
+      --config_file experiments/configs/${item.method}/hps.yaml
+      --log_file data/hps/${item.method}/${item.dataset}.csv
+      --num_epochs 500
+    params:
+    - experiments/configs/${item.method}/hps.yaml:
+      - ${item.dataset}
+    deps:
+    - experiments/scripts/run_hps.py
+    - data/datasets/${item.dataset}.pt
+    outs:
+    - data/hps/${item.method}/${item.dataset}.csv
+
+  multiplex_extract_best_hparams:
+    matrix:
+      method: [
+        "dmgi",
+        "hdgi",
+        "s2mgrl",
+      ]
+    cmd: >-
+      python3 experiments/scripts/extract_best_hparams.py
+      --input_dir data/hps/${item.method}/
+      --select_by_metric macro_f1
+      --hps_config_file experiments/configs/${item.method}/hps.yaml
+      --output_file experiments/configs/${item.method}/embed.yaml
+    deps:
+    - experiments/scripts/extract_best_hparams.py
+    - experiments/configs/${item.method}/hps.yaml
+    - data/hps/${item.method}/
+    outs:
+    - experiments/configs/${item.method}/embed.yaml:
+        cache: false
+
+  multiplex_embed:
+    matrix:
+      dataset: ${DATASETS}
+      method: [
+        "dmgi",
+        "hdgi",
+        "s2mgrl",
+      ]
+    cmd: >-
+      python3 experiments/scripts/embed.py 
+      --seeds ${SEEDS}
+      --dataset_file data/datasets/${item.dataset}.pt
+      --config_file experiments/configs/${item.method}/embed.yaml
+      --output_dir data/${item.method}/${item.dataset}/
+    params:
+    - experiments/configs/${item.method}/embed.yaml:
+      - ${item.dataset}
+    deps:
+    - experiments/scripts/embed.py
+    - data/datasets/${item.dataset}.pt
+    outs:
+    - data/${item.method}/${item.dataset}/
+
+  custom_gnn_level_embed:
+    matrix:
+      dataset: ${DATASETS}
+      method: [
+        "F_GBT_ConcatLin",
+        "F_GBT_Attention",
+        "F_DGI_ConcatLin",
+        "F_DGI_Attention",
+      ]
+    cmd: >-
+      python3 experiments/scripts/embed.py 
+      --seeds ${SEEDS}
+      --dataset_file data/datasets/${item.dataset}.pt
+      --config_file experiments/configs/${item.method}/embed.yaml
+      --output_dir data/${item.method}/${item.dataset}/
+    params:
+    - experiments/configs/${item.method}/embed.yaml:
+        - ${item.dataset}
+    deps:
+    - experiments/scripts/embed.py
+    - data/datasets/${item.dataset}.pt
+    outs:
+    - data/${item.method}/${item.dataset}/
+
+  # ------------------------------
+  # --- Embedding-level fusion ---
+  # ------------------------------
+  homogeneous_methods_mean_hps:
+    matrix:
+      dataset: ${DATASETS}
+      method: [
+        "deepwalk",
+        "supervised_gcn",
+        "supervised_gat",
+        "dgi",
+      ]
+    cmd: >-
+      python3 experiments/scripts/run_hps_layerwise.py
+      --seed ${SEED}
+      --dataset_file data/datasets/${item.dataset}.pt
+      --config_file experiments/configs/${item.method}/hps.yaml
+      --log_file data/hps/${item.method}/${item.dataset}.csv
+      --num_epochs 500
+    params:
+    - experiments/configs/${item.method}/hps.yaml:
+      - ${item.dataset}
+    deps:
+    - experiments/scripts/run_hps_layerwise.py
+    - data/datasets/${item.dataset}.pt
+    outs:
+    - data/hps/${item.method}/${item.dataset}.csv
+
+  homogeneous_methods_mean_extract_best_hparams:
+    matrix:
+      method: [
+        "deepwalk",
+        "supervised_gcn",
+        "supervised_gat",
+        "dgi",
+      ]
+    cmd: >-
+      python3 experiments/scripts/extract_best_hparams.py
+      --input_dir data/hps/${item.method}/
+      --select_by_metric macro_f1
+      --hps_config_file experiments/configs/${item.method}/hps.yaml
+      --output_file experiments/configs/${item.method}/embed.yaml
+    deps:
+    - experiments/scripts/extract_best_hparams.py
+    - experiments/configs/${item.method}/hps.yaml
+    - data/hps/${item.method}/
+    outs:
+    - experiments/configs/${item.method}/embed.yaml:
+        cache: false
+
+  homogeneous_methods_mean_embed:
+    matrix:
+      dataset: ${DATASETS}
+      method: [
+        "deepwalk",
+        "supervised_gcn",
+        "supervised_gat",
+        "dgi",
+      ]
+    cmd: >-
+      python3 experiments/scripts/embed_layerwise.py 
+      --seeds ${SEEDS}
+      --dataset_file data/datasets/${item.dataset}.pt
+      --config_file experiments/configs/${item.method}/embed.yaml
+      --output_dir data/${item.method}/${item.dataset}/
+    params:
+    - experiments/configs/${item.method}/embed.yaml:
+      - ${item.dataset}
+    deps:
+    - experiments/scripts/embed_layerwise.py
+    - data/datasets/${item.dataset}.pt
+    outs:
+    - data/${item.method}/${item.dataset}/
+
+  evaluate_dgi_naive_fusion:
+    foreach: ${DATASETS}
+    do:
+      cmd: >-
+        python3 experiments/scripts/evaluate_naive_fusion.py
+        --seeds ${SEEDS}
+        --dataset_file data/datasets/${item}.pt
+        --input_dir data/dgi/${item}/embeddings/
+        --output_dir data/dgi_naive_fusion/${item}/
+      deps:
+      - experiments/scripts/evaluate_naive_fusion.py
+      - data/datasets/${item}.pt
+      - data/dgi/${item}/embeddings/
+      outs:
+      - data/dgi_naive_fusion/${item}/Concat/
+      - data/dgi_naive_fusion/${item}/Sum/
+      - data/dgi_naive_fusion/${item}/Min/
+      - data/dgi_naive_fusion/${item}/Mean/
+      - data/dgi_naive_fusion/${item}/Max/
+
+  evaluate_dgi_trainable_fusion:
+    foreach: ${DATASETS}
+    do:
+      cmd: >-
+        python3 experiments/scripts/evaluate_trainable_fusion.py
+        --seeds ${SEEDS}
+        --dataset_file data/datasets/${item}.pt
+        --embeddings_dir data/dgi/${item}/embeddings/
+        --output_dir data/dgi_trainable_fusion/${item}/
+      deps:
+      - experiments/scripts/evaluate_trainable_fusion.py
+      - data/datasets/${item}.pt
+      - data/dgi/${item}/embeddings/
+      outs:
+      - data/dgi_trainable_fusion/${item}/Lookup_MSE/
+      - data/dgi_trainable_fusion/${item}/Lookup_BT/
+      - data/dgi_trainable_fusion/${item}/Attention_MSE/
+      - data/dgi_trainable_fusion/${item}/Attention_BT/
+      - data/dgi_trainable_fusion/${item}/ConcatLin_MSE/
+      - data/dgi_trainable_fusion/${item}/ConcatLin_BT/
+
+  # ------------------------
+  # --- Prediction-level ---
+  # ------------------------
+  evaluate_voting_classifier:
+    foreach: ${DATASETS}
+    do:
+      cmd: >-
+        python3 experiments/scripts/evaluate_voting_classifier.py
+        --seeds ${SEEDS}
+        --dataset_file data/datasets/${item}.pt
+        --input_dir data/dgi/${item}/embeddings/
+        --soft_output_dir data/voting_soft/${item}/
+        --hard_output_dir data/voting_hard/${item}/
+      deps:
+      - experiments/scripts/evaluate_voting_classifier.py
+      - data/datasets/${item}.pt
+      - data/dgi/${item}/embeddings/
+      outs:
+      - data/voting_soft/${item}/
+      - data/voting_hard/${item}/
+
+  # ---------------
+  # --- Metrics ---
+  # ---------------
+  summarize_metrics:
+    cmd: >-
+      python3 experiments/scripts/summarize_metrics.py
+      --metrics_dir data/
+      --output_file data/metrics_summary.txt
+      --paper_output_file data/paper_metrics_summary.txt
+    deps:
+    - experiments/scripts/summarize_metrics.py
+    # No fusion
+    - data/node_features/
+    - data/layerwise/
+    # Graph-level fusion
+    - data/flattened_deepwalk/
+    - data/flattened_supervised_gat/
+    - data/flattened_supervised_gcn/
+    - data/flattened_dgi/
+    - data/mhgcn/
+    # GNN-level fusion
+    - data/dmgi/
+    - data/hdgi/
+    - data/s2mgrl/
+    - data/F_GBT_Attention/
+    - data/F_GBT_ConcatLin/
+    - data/F_DGI_Attention/
+    - data/F_DGI_ConcatLin/
+    # Embedding-level
+    - data/deepwalk/
+    - data/supervised_gat/
+    - data/supervised_gcn/
+    - data/dgi/
+    - data/dgi_naive_fusion/
+    - data/dgi_trainable_fusion/
+    # Prediction-level
+    - data/voting_soft/
+    - data/voting_hard/
+    outs:
+    - data/metrics_summary.txt:
+        cache: false
+    - data/paper_metrics_summary.txt:
+        cache: false

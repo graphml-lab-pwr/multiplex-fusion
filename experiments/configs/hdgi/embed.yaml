@@ -1,0 +1,48 @@
+ACM:
+  attention_dim: 8
+  check_val_every_n_epoch: 50
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.HDGI
+  weight_decay: 0.0005
+Amazon:
+  attention_dim: 64
+  check_val_every_n_epoch: 50
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.HDGI
+  weight_decay: 0.0005
+CiteSeer:
+  attention_dim: 64
+  check_val_every_n_epoch: 50
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.HDGI
+  weight_decay: 0.0005
+Cora:
+  attention_dim: 64
+  check_val_every_n_epoch: 50
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.HDGI
+  weight_decay: 0.0005
+Freebase:
+  attention_dim: 32
+  check_val_every_n_epoch: 50
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.HDGI
+  weight_decay: 0.0005
+IMDB:
+  attention_dim: 32
+  check_val_every_n_epoch: 50
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.HDGI
+  weight_decay: 0.0005

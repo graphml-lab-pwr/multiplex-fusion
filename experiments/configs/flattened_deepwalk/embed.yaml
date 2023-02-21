@@ -1,0 +1,54 @@
+ACM:
+  check_val_every_n_epoch: 50
+  context_size: 15
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.FlattenedGraphDeepWalk
+  walk_length: 50
+  weight_decay: 0.0005
+Amazon:
+  check_val_every_n_epoch: 50
+  context_size: 10
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.FlattenedGraphDeepWalk
+  walk_length: 50
+  weight_decay: 0.0005
+CiteSeer:
+  check_val_every_n_epoch: 50
+  context_size: 5
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.FlattenedGraphDeepWalk
+  walk_length: 50
+  weight_decay: 0.0005
+Cora:
+  check_val_every_n_epoch: 50
+  context_size: 5
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.FlattenedGraphDeepWalk
+  walk_length: 50
+  weight_decay: 0.0005
+Freebase:
+  check_val_every_n_epoch: 50
+  context_size: 10
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.FlattenedGraphDeepWalk
+  walk_length: 50
+  weight_decay: 0.0005
+IMDB:
+  check_val_every_n_epoch: 50
+  context_size: 5
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.FlattenedGraphDeepWalk
+  walk_length: 20
+  weight_decay: 0.0005

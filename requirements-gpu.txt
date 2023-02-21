@@ -1,0 +1,27 @@
+# General packages
+numpy==1.23.5
+pandas==1.5.3
+scikit_learn==1.2.1
+seaborn==0.12.2
+tqdm==4.64.1
+PyYAML==6.0
+jupyter==1.0.0
+matplotlib==3.7.0
+pytorch_lightning==1.8.0
+
+# DVC
+dvc[s3]==3.38.1
+
+# PyTorch Geometric
+--find-links https://download.pytorch.org/whl/torch_stable.html
+--find-links https://data.pyg.org/whl/torch-2.1.0+cu121.html
+
+torch==2.1.0+cu121
+torch-scatter==2.1.2
+torch-sparse==0.6.18
+torch-cluster==1.6.2
+torch-spline-conv==1.2.2
+torch-geometric==2.4.0
+
+# Current project
+--editable .

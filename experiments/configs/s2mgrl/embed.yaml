@@ -1,0 +1,96 @@
+ACM:
+  check_val_every_n_epoch: 50
+  dropout: 0.2
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.S2MGRL
+  omega_inter:
+    PLP_PAP: 1
+  omega_intra:
+    PAP: 10
+    PLP: 0.001
+  self_connection_weight: 3
+  semantic_dim: 512
+  weight_decay: 0.0005
+Amazon:
+  check_val_every_n_epoch: 50
+  dropout: 0.2
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.S2MGRL
+  omega_inter:
+    IBI_IOI: 1
+    IVI_IBI: 1
+    IVI_IOI: 1
+  omega_intra:
+    IBI: 0.001
+    IOI: 10
+    IVI: 0.01
+  self_connection_weight: 3
+  semantic_dim: 512
+  weight_decay: 0.0005
+CiteSeer:
+  check_val_every_n_epoch: 50
+  dropout: 0.2
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.S2MGRL
+  omega_inter:
+    Citation_KNN: 1
+  omega_intra:
+    Citation: 0.001
+    KNN: 0.1
+  self_connection_weight: 3
+  semantic_dim: 512
+  weight_decay: 0.0005
+Cora:
+  check_val_every_n_epoch: 50
+  dropout: 0.2
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.S2MGRL
+  omega_inter:
+    Citation_KNN: 1
+  omega_intra:
+    Citation: 1
+    KNN: 0.1
+  self_connection_weight: 3
+  semantic_dim: 512
+  weight_decay: 0.0005
+Freebase:
+  check_val_every_n_epoch: 50
+  dropout: 0.2
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.S2MGRL
+  omega_inter:
+    MAM_MDM: 1
+    MAM_MWM: 1
+    MDM_MWM: 1
+  omega_intra:
+    MAM: 10
+    MDM: 0.01
+    MWM: 0.01
+  self_connection_weight: 3
+  semantic_dim: 512
+  weight_decay: 0.0005
+IMDB:
+  check_val_every_n_epoch: 50
+  dropout: 0.2
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.S2MGRL
+  omega_inter:
+    MAM_MDM: 1
+  omega_intra:
+    MAM: 1
+    MDM: 0.1
+  self_connection_weight: 3
+  semantic_dim: 512
+  weight_decay: 0.0005

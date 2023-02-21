@@ -1,0 +1,31 @@
+default: &default
+  # Hyperparameters
+  grid:
+    alpha: [0.0001, 0.001, 0.01, 0.1]
+
+  # Constant values
+  constants:
+    model_cls: "mssl.models.DMGI"
+    max_epochs: 2000
+    check_val_every_n_epoch: 50
+    emb_dim: 64
+    lr: 1.e-3
+    weight_decay: 5.e-4
+
+ACM:
+  <<: *default
+
+Amazon:
+  <<: *default
+
+Freebase:
+  <<: *default
+
+IMDB:
+  <<: *default
+
+Cora:
+  <<: *default
+
+CiteSeer:
+  <<: *default

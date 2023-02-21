@@ -1,0 +1,48 @@
+ACM:
+  check_val_every_n_epoch: 50
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.FlattenedGraphSupervisedGAT
+  num_layers: 3
+  weight_decay: 0.0005
+Amazon:
+  check_val_every_n_epoch: 50
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.FlattenedGraphSupervisedGAT
+  num_layers: 1
+  weight_decay: 0.0005
+CiteSeer:
+  check_val_every_n_epoch: 50
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.FlattenedGraphSupervisedGAT
+  num_layers: 3
+  weight_decay: 0.0005
+Cora:
+  check_val_every_n_epoch: 50
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.FlattenedGraphSupervisedGAT
+  num_layers: 3
+  weight_decay: 0.0005
+Freebase:
+  check_val_every_n_epoch: 50
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.FlattenedGraphSupervisedGAT
+  num_layers: 2
+  weight_decay: 0.0005
+IMDB:
+  check_val_every_n_epoch: 50
+  emb_dim: 64
+  lr: 0.001
+  max_epochs: 2000
+  model_cls: mssl.models.FlattenedGraphSupervisedGAT
+  num_layers: 2
+  weight_decay: 0.0005
